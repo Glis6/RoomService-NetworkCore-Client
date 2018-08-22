@@ -1,11 +1,16 @@
 package com.glis.io.network.client;
 
+import com.glis.exceptions.InvalidTypeException;
 import com.glis.io.network.AuthorizationHandler;
+import com.glis.io.network.AuthorizationResponse;
+import com.glis.io.network.codec.AuthorizationResponseDecoder;
 import com.glis.message.AuthorizationMessage;
+import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.util.Objects;
+import java.util.logging.Level;
 
 /**
  * @author Glis
@@ -16,7 +21,7 @@ public final class ClientAuthorizationHandler extends AuthorizationHandler {
      */
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-        ctx.writeAndFlush(new AuthorizationMessage(Integer.valueOf(Objects.requireNonNull(dotenv.get("networkType"))), dotenv.get("networkName")));
+        ctx.writeAndFlush(new AuthorizationMessage(Dotenv.load().get("clientId"), Dotenv.load().get("clientSecret")));
     }
 
     /**
@@ -24,24 +29,28 @@ public final class ClientAuthorizationHandler extends AuthorizationHandler {
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf byteBuf = (ByteBuf) msg;
-        try {
-            if (byteBuf.isReadable()) {
-                final int response = byteBuf.readByte();
-                if(response == 1) {
-                    logger.info("Got a positive response back, connecting...");
-                    networkTypes.get(Integer.valueOf(Objects.requireNonNull(dotenv.get("networkType")))).link(ctx, null);
-                } else {
-                    throw new Exception("Something went wrong connecting to the server.");
-                }
+        if (msg instanceof AuthorizationResponse) {
+            final AuthorizationResponse authorizationResponse = (AuthorizationResponse) msg;
+            if (authorizationResponse == AuthorizationResponse.SUCCESS) {
+                logger.info("Authorization success. Awaiting network type.");
+            } else {
+                logger.severe(String.format("Received an invalid response to authentication, '%s'.", authorizationResponse.toString()));
             }
-        } finally {
-            byteBuf.release();
+            return;
+        }
+        if(msg instanceof Integer) {
+            final int response = (int)msg;
+            logger.info("Got the network type back, connecting...");
+            networkTypes.get(response).link(ctx, null);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        ctx.close();
+        logger.log(Level.WARNING, "Exception attempting to authorize to the server.", cause);
     }
 }

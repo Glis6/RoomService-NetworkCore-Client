@@ -6,7 +6,7 @@
 
     <groupId>RoomService</groupId>
     <artifactId>NetworkCore-Client</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <properties>
         <kotlin.version>1.2.51</kotlin.version>
         <lombok.version>1.18.2</lombok.version>
@@ -16,7 +16,7 @@
         <spring.version>5.0.8.RELEASE</spring.version>
         <github.global.server>github</github.global.server>
         <java-dotenv.version>3.0.0</java-dotenv.version>
-        <network-core.version>1.1.0-SNAPSHOT</network-core.version>
+        <network-core.version>1.1.0</network-core.version>
     </properties>
 
     <distributionManagement>
