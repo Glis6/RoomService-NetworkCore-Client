@@ -4,6 +4,7 @@ import com.glis.exceptions.InvalidTypeException;
 import com.glis.io.network.AuthorizationHandler;
 import com.glis.io.network.AuthorizationResponse;
 import com.glis.io.network.codec.AuthorizationResponseDecoder;
+import com.glis.io.network.networktype.NetworkType;
 import com.glis.message.AuthorizationMessage;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.buffer.ByteBuf;
@@ -40,8 +41,13 @@ public final class ClientAuthorizationHandler extends AuthorizationHandler {
         }
         if(msg instanceof Integer) {
             final int response = (int)msg;
-            logger.info("Got the network type back, connecting...");
-            networkTypes.get(response).link(ctx, null);
+            logger.info("Got the network type back as '" + response + "', looking for corresponding handler...");
+            final NetworkType networkType = networkTypes.get(response);
+            if(networkType == null) {
+                throw new Exception("Could not find a handler for network type " + response + ".");
+            }
+            logger.info("Found the network type " + networkType.getClass().getSimpleName() + ", linking...");
+            networkType.link(ctx, null);
         }
     }
 
