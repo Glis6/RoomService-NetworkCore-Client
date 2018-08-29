@@ -18,11 +18,30 @@ import java.util.logging.Level;
  */
 public final class ClientAuthorizationHandler extends AuthorizationHandler {
     /**
+     * The client id to authenticate with.
+     */
+    private final String clientId;
+
+    /**
+     * The client secret to authenticate with.
+     */
+    private final String clientSecret;
+
+    /**
+     * @param clientId     The client id to authenticate with.
+     * @param clientSecret The client secret to authenticate with.
+     */
+    public ClientAuthorizationHandler(String clientId, String clientSecret) {
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
-        ctx.writeAndFlush(new AuthorizationMessage(Dotenv.load().get("clientId"), Dotenv.load().get("clientSecret")));
+        ctx.writeAndFlush(new AuthorizationMessage(clientId, clientSecret));
     }
 
     /**
@@ -39,11 +58,11 @@ public final class ClientAuthorizationHandler extends AuthorizationHandler {
             }
             return;
         }
-        if(msg instanceof Integer) {
-            final int response = (int)msg;
+        if (msg instanceof Integer) {
+            final int response = (int) msg;
             logger.info("Got the network type back as '" + response + "', looking for corresponding handler...");
             final NetworkType networkType = networkTypes.get(response);
-            if(networkType == null) {
+            if (networkType == null) {
                 throw new Exception("Could not find a handler for network type " + response + ".");
             }
             logger.info("Found the network type " + networkType.getClass().getSimpleName() + ", linking...");
